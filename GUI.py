@@ -3,6 +3,9 @@ from PIL import Image, ImageDraw
 
 from main import Main
 
+###
+### MAIN CLASS
+###
 
 # Class for the gui
 # Contains all elements for the user in and output
