@@ -1,70 +1,97 @@
 import numpy
-import matplotlib.pyplot
-from tqdm import tqdm
 from PIL import Image
 import tkinter as tk
 
-from nn import neuralNetwork
+from nn import NeuralNetwork
 from webcam import webcam
 
+# Class that manages backend like neural network training, query, webcam and data preparation
 class Main:
+
+    # Constructor that initialises the neural network
     def __init__(self, i, h, o, l):
         self.input_nodes = i
         self.hidden_nodes = h
         self.output_nodes = o
         self.learning_rate = l
-        self.nn = neuralNetwork(i, h, o, l)
+        self.nn = NeuralNetwork(i, h, o, l)
+        pass
 
+    # Loads a presaved model from the neural network
     def loadModel(self):
         self.nn.loadModel()
+        pass
     
+    # Method loads training data and trains the neural network
+    # updates text field in the gui with current training stats
     def trainModel(self, textField):
-        # load the mnist training data CSV file into a list
+
+        # Load data from file
         training_data_file = open("/Users/ynk/Desktop/code/mnist/mnist_dataset/mnist_train.csv", 'r')
         training_data_list = training_data_file.readlines()
         training_data_file.close()
-        # train the neural network
 
-        # epochs is the number of times the training data set is used for training
+        # epochs is the number the data is fed trough the neural network
         epochs = 5
         length = len(training_data_list)
 
-        textField.insert(tk.END, "Epochs:", epochs)
         for e in range(epochs):
-            # go through all records in the training data set
             correct = 0
             total = 0
             acc = 0
+
+            # Loop goes trough every datapoint in dataset
             for record in training_data_list:
-                # split the record by the ',' commas
+
+                # Prepare input and target values
                 all_values = record.split(',')
-                # scale and shift the inputs
                 inputs = (numpy.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
-                # create the target output values (all 0.01, except the desired label which is 0.99)
                 targets = numpy.zeros(self.output_nodes) + 0.01
-                # all_values[0] is the target label for this record
                 targets[int(all_values[0])] = 0.99
+
+                # Pass trough neural network
                 guess = self.nn.train(inputs, targets)
                 total += 1
+
+                # Counts correct guessed datapoints for accuracy
                 if guess:
                     correct += 1
+                    pass
                 acc = round(correct * 100 / total)
+
+                # Updates text field every 1000th datapoint
                 if total%1000 == 0:
                     msg = "Epoch {}/{}\nCurrent accuracy {}%\nSample {}/{}".format(e+1, epochs, acc, total, length)
                     self.printText(textField, msg)
                     textField.update_idletasks()
+                    pass
+                pass
+            pass
+        pass
 
+    # Method takes input from webcam and predicts number
+    # displays it to the text field in the gui
     def openCamera(self, textField):
+        
+        # Prepare inputs
         values = webcam.video().split(',')
         inputs = (numpy.asfarray(values) / 255.0 * 0.99) + 0.01
-        outputs = self.nn.query(inputs)
 
+        # Pass trough neural network and calculate predictions
+        outputs = self.nn.query(inputs)
         prediction = numpy.argmax(outputs)
         probability = numpy.round(outputs[prediction][0], 2)
-        msg = "Prediction:", prediction, "with a probability of", probability
-        self.printText(textField, msg)
 
+        # Display Prediction in text field
+        msg = "Prediction: {} with a probability of {}%".format(prediction, probability)
+        self.printText(textField, msg)
+        pass
+
+    # Method runs the drawing trough the neural network and
+    # displays the prediction in text field of the gui
     def runDrawing(self, textField):
+
+        # Prepare inputs from image
         im = Image.open("assets/image.png")
         gray_im = im.convert("L")
         pixels = list(gray_im.getdata())
@@ -72,51 +99,56 @@ class Main:
 
         values = pixels_str.split(',')
         inputs = (numpy.asfarray(values) / 255.0 * 0.99) + 0.01
+        
+        # Pass trough neural network and calculate predictions
         outputs = self.nn.query(inputs)
-
         prediction = numpy.argmax(outputs)
         probability = numpy.round(outputs[prediction][0], 2)
-        msg = "Prediction:", prediction, "with a probability of", probability
-        self.printText(textField, msg)
 
+        # Display Prediction in text field
+        msg = "Prediction: {} with a probability of {}%".format(prediction, probability)
+        self.printText(textField, msg)
+        pass
+
+    # Method test the neural network on a never seen test dataset
     def performance(self, textField):
-        # load the mnist test data CSV file into a list
+        
+        # Load data from file
         test_data_file = open("/Users/ynk/Desktop/code/mnist/mnist_dataset/mnist_test.csv", 'r')
         test_data_list = test_data_file.readlines()
         test_data_file.close()
 
-        # test the neural network
+        correct = 0
+        total = 0
+        acc = 0
 
-        # scorecard for how well the network performs, initially empty
-        scorecard = []
-
-        # go through all the records in the test data set
+        # Loop trough all recors in da test dataset
         for record in test_data_list:
-            # split the record by the ',' commas
+
+            # Prepare inputs
             all_values = record.split(',')
-            # correct answer is first value
             correct_label = int(all_values[0])
-            # scale and shift the inputs
             inputs = (numpy.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
-            # query the network
+
+            # Pass trough neural network
             outputs = self.nn.query(inputs)
-            # the index of the highest value corresponds to the label
             label = numpy.argmax(outputs)
-            # append correct or incorrect to list
-            if (label == correct_label):
-                # network's answer matches correct answer, add 1 to scorecard
-                scorecard.append(1)
-            else:
-                # network's answer doesn't match correct answer, add 0 to scorecard
-                scorecard.append(0)
+            total += 1
+
+            if label == correct_label:
+                correct += 1
                 pass
             pass
-
-        # calculate the performance score, the fraction of correct answers
-        scorecard_array = numpy.asarray(scorecard)
-        msg = "Performance =", (scorecard_array.sum() * 100/ scorecard_array.size), "%"
+        
+        # Display test accuracy in text field
+        acc = round(correct * 100 / total)
+        msg = "Performance = {}%".format(acc)
         self.printText(textField, msg)
+        pass
 
+    # Method takes text field element and message and displays it to it
     def printText(self, textField, msg):
         textField.delete("1.0", tk.END)
         textField.insert(tk.END, msg)
+        pass
+    pass

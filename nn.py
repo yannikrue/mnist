@@ -1,91 +1,86 @@
 import numpy
 import scipy.special
-import matplotlib.pyplot
 import pickle
 
-# neural network class definition
-class neuralNetwork:
+# Class for the neural netowrk
+class NeuralNetwork:
     
-    
-    # initialise the neural network
-    def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):
-        # set number of nodes in each input, hidden, output layer
-        self.inodes = inputnodes
-        self.hnodes = hiddennodes
-        self.onodes = outputnodes
-        
-        # link weight matrices, wih and who
-        # weights inside the arrays are w_i_j, where link is from node i to node j in the next layer
-        # w11 w21
-        # w12 w22 etc 
-        self.wih = numpy.random.normal(0.0, pow(self.inodes, -0.5), (self.hnodes, self.inodes))
-        self.who = numpy.random.normal(0.0, pow(self.hnodes, -0.5), (self.onodes, self.hnodes))
+    # Construction for the neural network
+    def __init__(self, i, h, o, lr):
 
-        # learning rate
-        self.lr = learningrate
+        # Set architecture for neural network
+        self.inputnodes = i
+        self.hiddennodes = h
+        self.outputnodes = o
+        self.learningrate = lr
         
+        # Create weight matrices which define the connections between each layer
+        self.weights_in_hi = numpy.random.normal(0.0, pow(self.inputnodes, -0.5), (self.hiddennodes, self.inputnodes))
+        self.weights_hi_out = numpy.random.normal(0.0, pow(self.hiddennodes, -0.5), (self.outputnodes, self.hiddennodes))
+    
         # activation function is the sigmoid function
-        self.activation_function = lambda x: scipy.special.expit(x)
-        
+        self.activation_function = lambda x: scipy.special.expit(x)        
         pass
 
     
-    # train the neural network
+    # Method to train the neural network
     def train(self, inputs_list, targets_list):
-        # convert inputs list to 2d array
+
+        # Prepare the data
         inputs = numpy.array(inputs_list, ndmin=2).T
         targets = numpy.array(targets_list, ndmin=2).T
         
-        # calculate signals into hidden layer
-        hidden_inputs = numpy.dot(self.wih, inputs)
-        # calculate the signals emerging from hidden layer
+        # Calculate inputs and values of hidden layer
+        hidden_inputs = numpy.dot(self.weights_in_hi, inputs)
         hidden_outputs = self.activation_function(hidden_inputs)
         
-        # calculate signals into final output layer
-        final_inputs = numpy.dot(self.who, hidden_outputs)
-        # calculate the signals emerging from final output layer
+        # Calculate inputs and value of output layer
+        final_inputs = numpy.dot(self.weights_hi_out, hidden_outputs)
         final_outputs = self.activation_function(final_inputs)
         
-        # output layer error is the (target - actual)
+        # Calculate error of outputs
         output_errors = targets - final_outputs
-        # hidden layer error is the output_errors, split by weights, recombined at hidden nodes
-        hidden_errors = numpy.dot(self.who.T, output_errors) 
+
+        # Calculate error in hidden layser by spliting the output error by the weights
+        hidden_errors = numpy.dot(self.weights_hi_out.T, output_errors) 
         
-        # update the weights for the links between the hidden and output layers
-        self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
+        # Correct weights of the layer based on the error
+        self.weights_hi_out += self.learningrate * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
+        self.weights_in_hi += self.learningrate * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))
         
-        # update the weights for the links between the input and hidden layers
-        self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))
-        
+        # Checks for accuracy of this training run
         if numpy.argmax(targets) == numpy.argmax(final_outputs):
-            # print(numpy.argmax(targets), " ", numpy.argmax(final_outputs), "\n")
             return True
         else:
             return False
             
+    # Method saves the weights into a pickle file
     def saveModel(self):
         with open('assets/model.pkl', 'wb') as f:
-            pickle.dump(self.wih, f)
-            pickle.dump(self.who, f)
+            pickle.dump(self.weights_in_hi, f)
+            pickle.dump(self.weights_hi_out, f)
+            pass
+        pass
 
+    # Method loads the weights from a pickle file
     def loadModel(self):
         with open('assets/model.pkl', 'rb') as f:
-            self.wih = pickle.load(f)
-            self.who = pickle.load(f)
+            self.weights_in_hi = pickle.load(f)
+            self.weights_hi_out = pickle.load(f)
+            pass
+        pass
     
-    # query the neural network
+    # Method queries the neural network
     def query(self, inputs_list):
-        # convert inputs list to 2d array
+        # Prepare data
         inputs = numpy.array(inputs_list, ndmin=2).T
         
-        # calculate signals into hidden layer
-        hidden_inputs = numpy.dot(self.wih, inputs)
-        # calculate the signals emerging from hidden layer
+        # Calculate inputs and values of hidden layer
+        hidden_inputs = numpy.dot(self.weights_in_hi, inputs)
         hidden_outputs = self.activation_function(hidden_inputs)
         
-        # calculate signals into final output layer
-        final_inputs = numpy.dot(self.who, hidden_outputs)
-        # calculate the signals emerging from final output layer
+        # Calculate inputs and value of output layer
+        final_inputs = numpy.dot(self.weights_hi_out, hidden_outputs)
         final_outputs = self.activation_function(final_inputs)
         
         return final_outputs

@@ -34,35 +34,41 @@ class GUI(tk.Tk):
         tk.Button(button_frame, text="Load Model", command=self.main.loadModel).pack()
         tk.Button(button_frame, text="Performance", command=self.getPerformance).pack()
         tk.Button(button_frame, text="Train Model", command=self.trainMain).pack()
+        pass
 
     # Method to draw on Canvas using mouse events
     def paint(self, event):
         x1, y1 = (event.x - 25), (event.y - 25)
         x2, y2 = (event.x + 25), (event.y + 25)
         self.canvas.create_oval(x1, y1, x2, y2, fill="white", width=25)
+        pass
 
     # Method to clear the Canvas
     def clearCanvas(self):
         self.canvas.delete("all")
+        pass
 
     # Method to train the neural network from the main components
     def trainMain(self):
         self.main.trainModel(self.text_widget)
+        pass
 
     # Method to run a webcam picture trough the neural network
     def camera(self):
         self.main.openCamera(self.text_widget)
+        pass
 
     # Method to test the accuracy of the neural network
     def getPerformance(self):
         self.main.performance(self.text_widget)
+        pass
 
     # Method to convert the canvas to an image
     def convert_to_image(self):
         
+        # Prepare image data
         width = self.canvas.winfo_width()
         height = self.canvas.winfo_height()
-
         image = Image.new("RGB", (width, height), "black")
         draw = ImageDraw.Draw(image)
 
@@ -71,8 +77,11 @@ class GUI(tk.Tk):
             coords = self.canvas.coords(item)
             if len(coords) == 4:
                 draw.ellipse(coords, fill="white")
+                pass
             else:
                 draw.line(coords, fill="white", width=10)
+                pass
+            pass
 
         # Scale and save the image for further use
         image = image.resize((28, 28), Image.NEAREST)
@@ -80,6 +89,8 @@ class GUI(tk.Tk):
 
         # Runs the drawing trough the neural network for a prediction
         self.main.runDrawing(self.text_widget)
+        pass
+    pass
 
 
 # main method
@@ -96,3 +107,4 @@ if __name__ == "__main__":
     # Run gui
     app = GUI(main)
     app.mainloop()
+    pass
