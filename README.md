@@ -15,3 +15,7 @@ The project includes a graphical user interface (GUI) built with tkinter that al
 The neural network in this project is implemented from scratch using 3 layers: an input layer, a hidden layer, and an output layer. The connections between the layers are stored in numpy arrays as matrices. The activation function used is the sigmoid function. The neural network includes methods for training, saving and loading a model, and querying the model with new data.
 
 The current presaved model was trained on the 60000 image training dataset for 5 epochs, meaning it was passed through the entire dataset 5 times. The model has 784 input nodes, 250 hidden nodes, and 10 output nodes (one for each digit). The accuracy of this model when tested on the 10000 image test dataset is over 97%.
+
+<div>
+<img width="1000" src="assets/exemple.png">
+</div>
